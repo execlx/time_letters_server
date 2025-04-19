@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { CreateUserDto } from './dto/create-user.dto';
@@ -13,19 +13,38 @@ export class UserService {
   ) {}
 
   async create(createUserDto: CreateUserDto) {
-    const newUser = this.userRepository.create(createUserDto);
-    await this.userRepository.save(newUser);
-    return { message: 'User successfully created', user: newUser };
+    try {
+      const newUser = this.userRepository.create(createUserDto);
+      await this.userRepository.save(newUser);
+      return { message: 'User successfully created', user: newUser };
+    } catch (error) {
+      throw new BadRequestException('Failed to create user');
+    }
   }
 
-  async findAll() {
-    return await this.userRepository.find();
+  async findAll({ page, limit }: { page: number; limit: number }) {
+    try {
+      const [users, total] = await this.userRepository.findAndCount({
+        skip: (page - 1) * limit,
+        take: limit,
+      });
+
+      return {
+        data: users,
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      };
+    } catch (error) {
+      throw new BadRequestException('Failed to fetch users');
+    }
   }
 
   async findOne(id: number) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      return { message: `User with id #${id} not found` };
+      throw new NotFoundException(`User with id #${id} not found`);
     }
     return user;
   }
@@ -36,18 +55,26 @@ export class UserService {
       ...updateUserDto,
     });
     if (!user) {
-      return { message: `User with id #${id} not found` };
+      throw new NotFoundException(`User with id #${id} not found`);
     }
-    await this.userRepository.save(user);
-    return { message: `User with id #${id} updated`, user };
+    try {
+      await this.userRepository.save(user);
+      return { message: `User with id #${id} updated`, user };
+    } catch (error) {
+      throw new BadRequestException('Failed to update user');
+    }
   }
 
   async remove(id: number) {
     const user = await this.userRepository.findOne({ where: { id } });
     if (!user) {
-      return { message: `User with id #${id} not found` };
+      throw new NotFoundException(`User with id #${id} not found`);
     }
-    await this.userRepository.remove(user);
-    return { message: `User with id #${id} removed`, user };
+    try {
+      await this.userRepository.remove(user);
+      return { message: `User with id #${id} removed`, user };
+    } catch (error) {
+      throw new BadRequestException('Failed to delete user');
+    }
   }
 }
