@@ -1,12 +1,16 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, ParseIntPipe, Query } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
+import { Public } from '../auth/decorators/public.decorator';
 
+@UseGuards(JwtAuthGuard)
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  @Public()
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
     try {
@@ -16,6 +20,7 @@ export class UserController {
     }
   }
 
+  @Public()
   @Get()
   async findAll(
     @Query('page') page: number = 1, // 默认页码为 1
