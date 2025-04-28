@@ -5,20 +5,13 @@ import { UserModule } from './user/user.module';
 import { AuthModule } from './auth/auth.module';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { APP_GUARD } from '@nestjs/core';
-import { JwtAuthGuard } from './auth/jwt/jwt.guard';
-
+import { JwtAuthGuard } from './jwt/jwt.guard';
+import { AppConfigModule } from '../config/config.module';
+import { DatabaseModule } from './database/database.module';
 @Module({
   imports: [
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: '',
-      database: 'time_letters',
-      autoLoadEntities: true,
-      synchronize: true,
-    }),
+    AppConfigModule,
+    DatabaseModule,
     UserModule,
     AuthModule,
   ],

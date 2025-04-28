@@ -2,8 +2,8 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpS
 import { UserService } from './user.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
-import { JwtAuthGuard } from '../auth/jwt/jwt.guard';
-import { Public } from '../auth/decorators/public.decorator';
+import { JwtAuthGuard } from '../jwt/jwt.guard';
+import { Public } from '../../common/decorators/public.decorator';
 
 @UseGuards(JwtAuthGuard)
 @Controller('user')
