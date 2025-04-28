@@ -15,7 +15,7 @@ export class User {
     password: string;
 
     @Column({ nullable: true })
-    profilePicture?: string;
+    avator?: string;
 
     @CreateDateColumn({ type: 'timestamp' })
     createdAt: Date;
