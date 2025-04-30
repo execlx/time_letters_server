@@ -1,86 +1,104 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { AUTH_STRATEGY } from './constants/auth.constants';
 import { UserService } from '../user/user.service';
-import * as bcrypt from 'bcrypt';
-import { User } from '../user/entities/user.entity';
+import { PhoneService } from './phone/phone.service';
 
 @Injectable()
 export class AuthService {
   constructor(
-    private readonly userService: UserService,
-    private readonly jwtService: JwtService,
+    private jwtService: JwtService,
+    private userService: UserService,
+    private phoneService: PhoneService,
   ) {}
 
-  // 验证用户名密码
-  async validateUserByUsernamePassword(username: string, password: string): Promise<User> {
-    const user = await this.userService.findByUsername(username);
+  async validateUserByUsernamePassword(username: string, password: string): Promise<any> {
+    const user = await this.userService.validateUser(username, password);
     if (!user) {
-      throw new UnauthorizedException('User not found');
+      throw new UnauthorizedException('Invalid credentials');
     }
-
-    const isPasswordValid = await this.validatePassword(password, user.password);
-    if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
-    }
-
     return user;
   }
 
-  // 验证手机号验证码
-  async validateUserByPhone(phone: string, code: string): Promise<User> {
+  async validateUserByWechat(code: string): Promise<any> {
+    // TODO: 实现微信验证逻辑
+    throw new UnauthorizedException('WeChat authentication not implemented');
+  }
+
+  async validateUserByPhone(phone: string, code: string): Promise<any> {
+    const isValid = await this.phoneService.validateVerificationCode(phone, code);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid phone verification code');
+    }
     const user = await this.userService.findByPhone(phone);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-
-    // TODO: 验证验证码
-    // const isValidCode = await this.validateVerificationCode(phone, code);
-    // if (!isValidCode) {
-    //   throw new UnauthorizedException('Invalid verification code');
-    // }
-
     return user;
   }
 
-  // 验证微信登录
-  async validateUserByWechat(code: string): Promise<User> {
-    // TODO: 获取微信用户信息
-    // const wechatUser = await this.wechatService.getUserInfo(code);
-    const wechatUser = { openid: 'test_openid' };
+  async validateRequest(request: any, strategy: string): Promise<boolean> {
+    switch (strategy) {
+      case AUTH_STRATEGY.LOCAL:
+        return this.validateLocal(request);
+      case AUTH_STRATEGY.PHONE:
+        return this.validatePhone(request);
+      case AUTH_STRATEGY.JWT:
+        return this.validateJwt(request);
+      default:
+        throw new UnauthorizedException('Invalid authentication strategy');
+    }
+  }
 
-    const user = await this.userService.findByWechatOpenId(wechatUser.openid);
+  private async validateLocal(request: any): Promise<boolean> {
+    const { username, password } = request.body;
+    const user = await this.userService.validateUser(username, password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+    request.user = user;
+    return true;
+  }
+
+  private async validatePhone(request: any): Promise<boolean> {
+    const { phone, code } = request.body;
+    const isValid = await this.phoneService.validateVerificationCode(phone, code);
+    if (!isValid) {
+      throw new UnauthorizedException('Invalid phone verification code');
+    }
+    const user = await this.userService.findByPhone(phone);
     if (!user) {
       throw new UnauthorizedException('User not found');
     }
-
-    return user;
+    request.user = user;
+    return true;
   }
 
-  // 生成 JWT token
-  async generateToken(user: User) {
-    const payload = { 
-      sub: user.id, 
-      username: user.username 
-    };
-    return {
-      access_token: this.jwtService.sign(payload),
-      user: {
-        id: user.id,
-        username: user.username,
-        email: user.email,
-        phone: user.phone
+  private async validateJwt(request: any): Promise<boolean> {
+    const token = this.extractTokenFromHeader(request);
+    if (!token) {
+      throw new UnauthorizedException('No token provided');
+    }
+    try {
+      const payload = await this.jwtService.verifyAsync(token);
+      const user = await this.userService.findById(payload.sub);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
       }
-    };
+      request.user = user;
+      return true;
+    } catch {
+      throw new UnauthorizedException('Invalid token');
+    }
   }
 
-  // 验证密码
-  async validatePassword(plainPassword: string, hashedPassword: string): Promise<boolean> {
-    return bcrypt.compare(plainPassword, hashedPassword);
+  private extractTokenFromHeader(request: any): string | undefined {
+    const [type, token] = request.headers.authorization?.split(' ') ?? [];
+    return type === 'Bearer' ? token : undefined;
   }
 
-  // 加密密码
-  async hashPassword(password: string): Promise<string> {
-    const saltRounds = 10;
-    return bcrypt.hash(password, saltRounds);
+  async generateToken(user: any): Promise<string> {
+    const payload = { sub: user.id, username: user.username };
+    return this.jwtService.signAsync(payload);
   }
-}
+} 

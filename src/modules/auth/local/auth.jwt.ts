@@ -1,8 +1,8 @@
 import { Inject, Injectable } from '@nestjs/common';
-import { PassportStrategy } from '@nestjs/passport';
+import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import { JwtConfig } from '../../interfaces/config.interface';
-import { JWTPayload } from '../../interfaces/jwt.payload';
+import { JwtConfig } from '../../../interfaces/config.interface';
+import { JWTPayload } from '../../../interfaces/jwt.payload';
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(@Inject('JWT_CONFIG') jwtConfig: JwtConfig){
@@ -18,3 +18,5 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     return { userId: payload.sub, username: payload.username };
   }
 }
+  
+export class JwtAuthGuard extends AuthGuard('jwt') {}

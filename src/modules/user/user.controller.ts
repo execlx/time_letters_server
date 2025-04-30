@@ -18,14 +18,18 @@ import {
   ResetPasswordDto,
   UpdateUserDto 
 } from './dto/user-dto';
-import { JwtAuthGuard } from '../jwt/jwt.guard';
+import { AuthGuard } from '../auth/guards/auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 
+@ApiTags('用户')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  // 创建用户
+  @ApiOperation({ summary: '创建用户' })
+  @ApiResponse({ status: 201, description: '用户创建成功' })
+  @ApiResponse({ status: 400, description: '创建用户失败' })
   @Public()
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
@@ -36,7 +40,9 @@ export class UserController {
     }
   }
 
-  // 通过手机号创建用户
+  @ApiOperation({ summary: '通过手机号创建用户' })
+  @ApiResponse({ status: 201, description: '用户创建成功' })
+  @ApiResponse({ status: 400, description: '创建用户失败' })
   @Public()
   @Post('phone')
   async createByPhone(@Body() registerDto: PhoneRegisterDto) {
@@ -47,7 +53,9 @@ export class UserController {
     }
   }
 
-  // 通过微信创建用户
+  @ApiOperation({ summary: '通过微信创建用户' })
+  @ApiResponse({ status: 201, description: '用户创建成功' })
+  @ApiResponse({ status: 400, description: '创建用户失败' })
   @Public()
   @Post('wechat')
   async createByWechat(@Body() registerDto: WechatRegisterDto) {
@@ -58,19 +66,24 @@ export class UserController {
     }
   }
 
-  // 设置密码
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '设置密码' })
+  @ApiResponse({ status: 200, description: '密码设置成功' })
+  @ApiResponse({ status: 400, description: '设置密码失败' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
   @Post('password/set')
   async setPassword(@Body() setPasswordDto: SetPasswordDto) {
     try {
-      await this.userService.setPassword(parseInt(setPasswordDto.userId), setPasswordDto.password);
+      await this.userService.setPassword(setPasswordDto.userId, setPasswordDto.password);
       return { message: 'Password set successfully' };
     } catch (error) {
       throw new HttpException(error.message || 'Failed to set password', HttpStatus.BAD_REQUEST);
     }
   }
 
-  // 重置密码
+  @ApiOperation({ summary: '重置密码' })
+  @ApiResponse({ status: 200, description: '密码重置成功' })
+  @ApiResponse({ status: 400, description: '重置密码失败' })
   @Public()
   @Post('password/reset')
   async resetPassword(@Body() resetDto: ResetPasswordDto) {
@@ -82,8 +95,12 @@ export class UserController {
     }
   }
 
-  // 更新用户信息
-  @UseGuards(JwtAuthGuard)
+  @ApiOperation({ summary: '更新用户信息' })
+  @ApiResponse({ status: 200, description: '用户信息更新成功' })
+  @ApiResponse({ status: 400, description: '更新用户信息失败' })
+  @ApiResponse({ status: 404, description: '用户不存在' })
+  @ApiBearerAuth()
+  @UseGuards(AuthGuard)
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
     try {

@@ -1,18 +1,22 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../user/user.module';
+import { PhoneModule } from './phone/phone.module';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { LocalStrategy, LocalAuthGuard } from '../local/auth.local';
-import { PhoneStrategy, PhoneAuthGuard } from '../local/auth.phone';
-import { WechatStrategy, WechatAuthGuard } from '../local/auth.wechat';
+import { AuthGuard } from './guards/auth.guard';
+import { LocalStrategy } from './local/auth.local';
+import { WechatStrategy } from './local/auth.wechat';
+import { JwtStrategy } from './local/auth.jwt';
 
 @Module({
   imports: [
-    UserModule,
+    forwardRef(() => UserModule),
+    PhoneModule,
     PassportModule,
+    ConfigModule,
     JwtModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
@@ -25,18 +29,21 @@ import { WechatStrategy, WechatAuthGuard } from '../local/auth.wechat';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AuthGuard,
     LocalStrategy,
-    PhoneStrategy,
     WechatStrategy,
-    LocalAuthGuard,
-    PhoneAuthGuard,
-    WechatAuthGuard,
+    JwtStrategy,
+    {
+      provide: 'JWT_CONFIG',
+      useFactory: (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+      }),
+      inject: [ConfigService],
+    },
   ],
   exports: [
     AuthService,
-    LocalAuthGuard,
-    PhoneAuthGuard,
-    WechatAuthGuard,
+    AuthGuard,
   ],
 })
 export class AuthModule {}

@@ -11,14 +11,14 @@ export class User {
     @Column({ length: 255, unique: true, nullable: true })
     email?: string;
 
-    @Column()
-    password: string;
-
     @Column({ length: 20, unique: true, nullable: true })
     phone?: string;
 
     @Column({ length: 100, unique: true, nullable: true })
-    wechatOpenId?: string;
+    wechatOpenid?: string;
+
+    @Column()
+    password: string;
 
     @Column({ nullable: true })
     profilePicture?: string;
