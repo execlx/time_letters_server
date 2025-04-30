@@ -1,15 +1,31 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, HttpException, HttpStatus, ParseIntPipe, Query, UseGuards } from '@nestjs/common';
+import { 
+  Controller, 
+  Post, 
+  Body, 
+  Patch, 
+  Param, 
+  HttpException, 
+  HttpStatus, 
+  ParseIntPipe, 
+  UseGuards 
+} from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
-import { UpdateUserDto } from './dto/update-user.dto';
+import { 
+  CreateUserDto, 
+  PhoneRegisterDto, 
+  WechatRegisterDto,
+  SetPasswordDto,
+  ResetPasswordDto,
+  UpdateUserDto 
+} from './dto/user-dto';
 import { JwtAuthGuard } from '../jwt/jwt.guard';
 import { Public } from '../../common/decorators/public.decorator';
 
-@UseGuards(JwtAuthGuard)
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
+  // 创建用户
   @Public()
   @Post()
   async create(@Body() createUserDto: CreateUserDto) {
@@ -20,31 +36,54 @@ export class UserController {
     }
   }
 
+  // 通过手机号创建用户
   @Public()
-  @Get()
-  async findAll(
-    @Query('page') page: number = 1, // 默认页码为 1
-    @Query('limit') limit: number = 10, // 默认每页 10 条
-  ) {
+  @Post('phone')
+  async createByPhone(@Body() registerDto: PhoneRegisterDto) {
     try {
-      return await this.userService.findAll({ page, limit });
+      return await this.userService.createByPhone(registerDto);
     } catch (error) {
-      throw new HttpException(error.message || 'Failed to fetch users', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(error.message || 'Failed to create user with phone', HttpStatus.BAD_REQUEST);
     }
   }
 
-  @Get(':id')
-  async findOne(@Param('id', ParseIntPipe) id: number) {
+  // 通过微信创建用户
+  @Public()
+  @Post('wechat')
+  async createByWechat(@Body() registerDto: WechatRegisterDto) {
     try {
-      return await this.userService.findOne(id);
+      return await this.userService.createByWechat(registerDto);
     } catch (error) {
-      if (error.status === HttpStatus.NOT_FOUND) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      }
-      throw new HttpException(error.message || 'Failed to fetch user', HttpStatus.INTERNAL_SERVER_ERROR);
+      throw new HttpException(error.message || 'Failed to create user with WeChat', HttpStatus.BAD_REQUEST);
     }
   }
 
+  // 设置密码
+  @UseGuards(JwtAuthGuard)
+  @Post('password/set')
+  async setPassword(@Body() setPasswordDto: SetPasswordDto) {
+    try {
+      await this.userService.setPassword(parseInt(setPasswordDto.userId), setPasswordDto.password);
+      return { message: 'Password set successfully' };
+    } catch (error) {
+      throw new HttpException(error.message || 'Failed to set password', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  // 重置密码
+  @Public()
+  @Post('password/reset')
+  async resetPassword(@Body() resetDto: ResetPasswordDto) {
+    try {
+      await this.userService.resetPassword(resetDto.phone, resetDto.password);
+      return { message: 'Password reset successfully' };
+    } catch (error) {
+      throw new HttpException(error.message || 'Failed to reset password', HttpStatus.BAD_REQUEST);
+    }
+  }
+
+  // 更新用户信息
+  @UseGuards(JwtAuthGuard)
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
     try {
@@ -54,18 +93,6 @@ export class UserController {
         throw new HttpException(error.message, HttpStatus.NOT_FOUND);
       }
       throw new HttpException(error.message || 'Failed to update user', HttpStatus.BAD_REQUEST);
-    }
-  }
-
-  @Delete(':id')
-  async remove(@Param('id', ParseIntPipe) id: number) {
-    try {
-      return await this.userService.remove(id);
-    } catch (error) {
-      if (error.status === HttpStatus.NOT_FOUND) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
-      }
-      throw new HttpException(error.message || 'Failed to delete user', HttpStatus.INTERNAL_SERVER_ERROR);
     }
   }
 }

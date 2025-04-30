@@ -1,31 +1,42 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UserModule } from '../user/user.module';
-import { LocalStrategy } from '../local/auth.local';
-import { JwtStrategy } from '../jwt/auth.jwt';
-import { PassportModule } from '@nestjs/passport';
-import { AppConfigModule } from '../../config/config.module';
-import { JwtConfig } from '../../interfaces/config.interface';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { LocalStrategy, LocalAuthGuard } from '../local/auth.local';
+import { PhoneStrategy, PhoneAuthGuard } from '../local/auth.phone';
+import { WechatStrategy, WechatAuthGuard } from '../local/auth.wechat';
 
 @Module({
   imports: [
     UserModule,
-    AppConfigModule,
     PassportModule,
-
     JwtModule.registerAsync({
-      imports: [AppConfigModule],
-      useFactory: async (config: JwtConfig) => ({
-        secret: config.secret,
-        signOptions: {expiresIn: config.expiresIn}, // Adjust the expiration time as needed
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: { expiresIn: '24h' },
       }),
-      inject: ['JWT_CONFIG'], 
-    })
+      inject: [ConfigService],
+    }),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy],
-  exports: [AuthService],
+  providers: [
+    AuthService,
+    LocalStrategy,
+    PhoneStrategy,
+    WechatStrategy,
+    LocalAuthGuard,
+    PhoneAuthGuard,
+    WechatAuthGuard,
+  ],
+  exports: [
+    AuthService,
+    LocalAuthGuard,
+    PhoneAuthGuard,
+    WechatAuthGuard,
+  ],
 })
 export class AuthModule {}
