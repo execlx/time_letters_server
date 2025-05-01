@@ -9,7 +9,7 @@ import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local/auth.local';
 import { PhoneAuthGuard } from './local/auth.phone';
 import { WechatAuthGuard } from './local/auth.wechat';
-import { Public } from '../../common/decorators/public.decorator';
+import { Public } from './decorators/public.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody } from '@nestjs/swagger';
 import { 
   UsernamePasswordLoginDto, 

@@ -17,7 +17,7 @@ import {
   UpdateUserDto 
 } from './dto/user-dto';
 import { AuthGuard } from '../auth/guards/auth.guard';
-import { Public } from '../../common/decorators/public.decorator';
+import { Public } from '../auth/decorators/public.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 import { BusinessException } from '../../common/exceptions/business.exception';
 import { ErrorCode } from '../../common/constants/errorcode.constant';
@@ -116,7 +116,7 @@ export class UserController {
   @ApiResponse({ status: 404, description: '用户不存在' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
-  
+
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
     try {
