@@ -7,6 +7,7 @@ import { AppConfigModule } from '../config/config.module';
 import { DatabaseModule } from './database/database.module';
 import { EmailModule } from './auth/email/email.module';
 import { LoggerModule } from './logger/logger.module';
+import { DeepseekModule } from './deepseek/deepseek.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { LoggerModule } from './logger/logger.module';
     AuthModule,
     EmailModule,
     LoggerModule,
+    DeepseekModule,
   ],
   controllers: [AppController],
   providers: [AppService],

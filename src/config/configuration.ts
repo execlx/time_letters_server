@@ -11,5 +11,10 @@ export default () => ({
       secret: process.env.JWT_SECRET,
       expiresIn: process.env.JWT_EXPIRES_IN || '1h',
     },
+    deepseek: {
+      apiKey: process.env.DEEPSEEK_API_KEY,
+      apiBaseUrl: process.env.DEEPSEEK_API_BASE_URL || 'https://api.deepseek.com',
+      model: process.env.DEEPSEEK_MODEL || 'deepseek-chat',
+    },
   });
   

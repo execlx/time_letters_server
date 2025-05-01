@@ -13,6 +13,12 @@ export interface DatabaseConfig {
     expiresIn: string;
   }
   
+  export interface DeepseekConfig {
+    apiKey: string;
+    apiBaseUrl: string;
+    model: string;
+  }
+  
   export interface JWTPayload {
     sub: string;
     username: string;
@@ -25,5 +31,6 @@ export interface DatabaseConfig {
   export interface AppConfig {
     database: DatabaseConfig;
     jwt: JwtConfig;
+    deepseek: DeepseekConfig;
   }
   
