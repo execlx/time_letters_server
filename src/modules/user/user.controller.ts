@@ -4,8 +4,6 @@ import {
   Body, 
   Patch, 
   Param, 
-  HttpException, 
-  HttpStatus, 
   ParseIntPipe, 
   UseGuards 
 } from '@nestjs/common';
@@ -21,6 +19,8 @@ import {
 import { AuthGuard } from '../auth/guards/auth.guard';
 import { Public } from '../../common/decorators/public.decorator';
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+import { BusinessException } from '../../common/exceptions/business.exception';
+import { ErrorCode } from '../../common/constants/errorcode.constant';
 
 @ApiTags('用户')
 @Controller('user')
@@ -36,7 +36,10 @@ export class UserController {
     try {
       return await this.userService.create(createUserDto);
     } catch (error) {
-      throw new HttpException(error.message || 'Failed to create user', HttpStatus.BAD_REQUEST);
+      if (error instanceof BusinessException) {
+        throw error;
+      }
+      throw new BusinessException('创建用户失败', ErrorCode.SYSTEM_ERROR);
     }
   }
 
@@ -49,7 +52,10 @@ export class UserController {
     try {
       return await this.userService.createByPhone(registerDto);
     } catch (error) {
-      throw new HttpException(error.message || 'Failed to create user with phone', HttpStatus.BAD_REQUEST);
+      if (error instanceof BusinessException) {
+        throw error;
+      }
+      throw new BusinessException('创建用户失败', ErrorCode.SYSTEM_ERROR);
     }
   }
 
@@ -62,7 +68,10 @@ export class UserController {
     try {
       return await this.userService.createByWechat(registerDto);
     } catch (error) {
-      throw new HttpException(error.message || 'Failed to create user with WeChat', HttpStatus.BAD_REQUEST);
+      if (error instanceof BusinessException) {
+        throw error;
+      }
+      throw new BusinessException('创建用户失败', ErrorCode.SYSTEM_ERROR);
     }
   }
 
@@ -75,9 +84,12 @@ export class UserController {
   async setPassword(@Body() setPasswordDto: SetPasswordDto) {
     try {
       await this.userService.setPassword(setPasswordDto.userId, setPasswordDto.password);
-      return { message: 'Password set successfully' };
+      return { message: '密码设置成功' };
     } catch (error) {
-      throw new HttpException(error.message || 'Failed to set password', HttpStatus.BAD_REQUEST);
+      if (error instanceof BusinessException) {
+        throw error;
+      }
+      throw new BusinessException('设置密码失败', ErrorCode.SYSTEM_ERROR);
     }
   }
 
@@ -89,9 +101,12 @@ export class UserController {
   async resetPassword(@Body() resetDto: ResetPasswordDto) {
     try {
       await this.userService.resetPassword(resetDto.phone, resetDto.password);
-      return { message: 'Password reset successfully' };
+      return { message: '密码重置成功' };
     } catch (error) {
-      throw new HttpException(error.message || 'Failed to reset password', HttpStatus.BAD_REQUEST);
+      if (error instanceof BusinessException) {
+        throw error;
+      }
+      throw new BusinessException('重置密码失败', ErrorCode.SYSTEM_ERROR);
     }
   }
 
@@ -101,15 +116,16 @@ export class UserController {
   @ApiResponse({ status: 404, description: '用户不存在' })
   @ApiBearerAuth()
   @UseGuards(AuthGuard)
+  
   @Patch(':id')
   async update(@Param('id', ParseIntPipe) id: number, @Body() updateUserDto: UpdateUserDto) {
     try {
       return await this.userService.update(id, updateUserDto);
     } catch (error) {
-      if (error.status === HttpStatus.NOT_FOUND) {
-        throw new HttpException(error.message, HttpStatus.NOT_FOUND);
+      if (error instanceof BusinessException) {
+        throw error;
       }
-      throw new HttpException(error.message || 'Failed to update user', HttpStatus.BAD_REQUEST);
+      throw new BusinessException('更新用户信息失败', ErrorCode.SYSTEM_ERROR);
     }
   }
 }

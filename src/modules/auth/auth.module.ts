@@ -10,11 +10,13 @@ import { AuthGuard } from './guards/auth.guard';
 import { LocalStrategy } from './local/auth.local';
 import { WechatStrategy } from './local/auth.wechat';
 import { JwtStrategy } from './local/auth.jwt';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
     forwardRef(() => UserModule),
     PhoneModule,
+    EmailModule,
     PassportModule,
     ConfigModule,
     JwtModule.registerAsync({
