@@ -8,12 +8,15 @@ import { LoggerService } from '../../logger/logger.service';
 
 @Injectable()
 export class PhoneService {
-    private readonly logger = new LoggerService('手机验证码服务');
+    private readonly logger: LoggerService;
 
     constructor(
         @InjectRepository(PhoneVerification)
         private readonly phoneVerificationRepository: Repository<PhoneVerification>,
-    ) {}
+    ) {
+        this.logger = new LoggerService();
+        this.logger.setContext('手机验证码服务');
+    }
 
     async createVerificationCode(phone: string): Promise<string> {
         this.logger.debug(`开始创建手机验证码: ${phone}`, 'createVerificationCode');
@@ -44,7 +47,7 @@ export class PhoneService {
         
         if (!verification) {
             this.logger.warn(`验证码不存在: ${phone}`, 'validateVerificationCode');
-            throw new BusinessException('验证码不存在', ErrorCode.VERIFICATION_CODE_ERROR);
+            throw new BusinessException('验证码不存在', ErrorCode.INVALID_PHONE_VERIFICATION_CODE);
         }
 
         // 检查验证码是否过期（10分钟）
@@ -53,7 +56,7 @@ export class PhoneService {
 
         if (new Date() > expiryTime) {
             this.logger.warn(`验证码已过期: ${phone}`, 'validateVerificationCode');
-            throw new BusinessException('验证码已过期', ErrorCode.VERIFICATION_CODE_EXPIRED);
+            throw new BusinessException('验证码已过期', ErrorCode.PHONE_VERIFICATION_CODE_EXPIRED);
         }
 
         // 验证成功后删除验证码

@@ -6,6 +6,11 @@ import * as nodemailer from 'nodemailer';
 import { LoggerService } from '../../logger/logger.service';
 import { LOGGER_CONTEXT } from '../../logger/constants/logger.constants';
 import { EmailVerification } from './entities/email-verification.entity';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Inject } from '@nestjs/common';
+import { Cache } from 'cache-manager';
+import { BusinessException } from '../../../common/exceptions/business.exception';
+import { ErrorCode } from '../../../common/constants/errorcode.constant';
 
 interface EmailConfig {
     host: string;
@@ -18,14 +23,19 @@ interface EmailConfig {
 
 @Injectable()
 export class EmailService {
-    private readonly logger = new LoggerService(LOGGER_CONTEXT.EMAIL);
+    private readonly logger: LoggerService;
     private transporter: nodemailer.Transporter;
+    private readonly VERIFICATION_CODE_TTL = 600; // 10分钟
 
     constructor(
         private readonly configService: ConfigService,
         @InjectRepository(EmailVerification)
         private readonly emailVerificationRepository: Repository<EmailVerification>,
+        @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
     ) {
+        this.logger = new LoggerService();
+        this.logger.setContext('邮箱验证码服务');
+
         const host = this.configService.get<string>('EMAIL_HOST');
         const port = this.configService.get<number>('EMAIL_PORT');
         const user = this.configService.get<string>('EMAIL_USER');
@@ -49,14 +59,13 @@ export class EmailService {
         this.transporter = nodemailer.createTransport({
             host: emailConfig.host,
             port: emailConfig.port,
-            secure: true, // 使用 SSL
+            secure: true,
             auth: {
                 user: emailConfig.user,
                 pass: emailConfig.pass,
             },
         });
 
-        // 验证邮件配置
         this.verifyConnection();
     }
 
@@ -76,17 +85,9 @@ export class EmailService {
         // 生成6位随机验证码
         const code = Math.floor(100000 + Math.random() * 900000).toString();
         
-        // 设置验证码过期时间为10分钟后
-        const expiresAt = new Date();
-        expiresAt.setMinutes(expiresAt.getMinutes() + 10);
-
-        // 保存验证码到数据库
-        const verification = this.emailVerificationRepository.create({
-            email,
-            code,
-            expiresAt,
-        });
-        await this.emailVerificationRepository.save(verification);
+        // 保存验证码到Redis
+        const key = `email:verification:${email}`;
+        await this.cacheManager.set(key, code, this.VERIFICATION_CODE_TTL * 1000);
 
         // 发送验证邮件
         await this.sendVerificationEmail(email, code);
@@ -97,22 +98,21 @@ export class EmailService {
     async validateVerificationCode(email: string, code: string): Promise<boolean> {
         this.logger.debug(`开始验证邮件验证码: ${email}`);
         
-        const verification = await this.emailVerificationRepository.findOne({
-            where: { email, code },
-        });
+        const key = `email:verification:${email}`;
+        const storedCode = await this.cacheManager.get<string>(key);
 
-        if (!verification) {
-            this.logger.warn(`验证码不存在: ${email}`);
-            return false;
+        if (!storedCode) {
+            this.logger.warn(`验证码不存在或已过期: ${email}`);
+            throw new BusinessException('验证码不存在或已过期', ErrorCode.INVALID_EMAIL_VERIFICATION_CODE);
         }
 
-        if (verification.expiresAt < new Date()) {
-            this.logger.warn(`验证码已过期: ${email}`);
-            return false;
+        if (storedCode !== code) {
+            this.logger.warn(`验证码不匹配: ${email}`);
+            throw new BusinessException('验证码不正确', ErrorCode.INVALID_EMAIL_VERIFICATION_CODE);
         }
 
-        // 验证成功后删除验证码记录
-        await this.emailVerificationRepository.remove(verification);
+        // 验证成功后删除验证码
+        await this.cacheManager.del(key);
 
         this.logger.log(`邮件验证码验证成功: ${email}`);
         return true;

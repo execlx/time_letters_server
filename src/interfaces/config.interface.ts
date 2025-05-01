@@ -13,6 +13,15 @@ export interface DatabaseConfig {
     expiresIn: string;
   }
   
+  export interface JWTPayload {
+    sub: string;
+    username: string;
+    email?: string;
+    phone?: string;
+    iat?: number;
+    exp?: number;
+  }
+  
   export interface AppConfig {
     database: DatabaseConfig;
     jwt: JwtConfig;

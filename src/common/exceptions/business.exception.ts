@@ -4,8 +4,8 @@ import { ErrorCode } from '../constants/errorcode.constant';
 export class BusinessException extends HttpException {
   constructor(
     message: string,
-    errorCode: ErrorCode,
-    statusCode: HttpStatus = HttpStatus.BAD_REQUEST
+    errorCode: keyof typeof ErrorCode,
+    statusCode: number = HttpStatus.BAD_REQUEST
   ) {
     super(
       {

@@ -31,7 +31,7 @@ export class PhoneController {
       if (error instanceof BusinessException) {
         throw error;
       }
-      throw new BusinessException('验证码验证失败', ErrorCode.VERIFICATION_CODE_ERROR);
+      throw new BusinessException('验证码验证失败', ErrorCode.INVALID_PHONE_VERIFICATION_CODE);
     }
   }
 

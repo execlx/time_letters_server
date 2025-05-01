@@ -11,22 +11,46 @@ import { LoggerService } from '../logger/logger.service';
 
 @Injectable()
 export class AuthService {
-  private readonly logger = new LoggerService('认证服务');
+  private readonly logger: LoggerService;
 
   constructor(
     private readonly jwtService: JwtService,
     private readonly userService: UserService,
     private readonly phoneService: PhoneService,
     private readonly emailService: EmailService,
-  ) {}
+  ) {
+    this.logger = new LoggerService();
+    this.logger.setContext('认证服务');
+  }
 
   async validateUserByUsernamePassword(username: string, password: string) {
     this.logger.debug(`开始验证用户名密码登录: ${username}`, 'validateUserByUsernamePassword');
+    
+    // 检查用户名和密码是否为空
+    if (!username || !password) {
+        this.logger.warn(`用户名或密码为空: ${username}`, 'validateUserByUsernamePassword');
+        throw new BusinessException('用户名和密码不能为空', ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    // 检查密码长度
+    if (password.length < 6) {
+        this.logger.warn(`密码长度不足: ${username}`, 'validateUserByUsernamePassword');
+        throw new BusinessException('密码长度不能少于6位', ErrorCode.INVALID_CREDENTIALS);
+    }
+
+    // 验证用户
     const user = await this.userService.validateUser(username, password);
     if (!user) {
-      this.logger.warn(`用户名或密码错误: ${username}`, 'validateUserByUsernamePassword');
-      throw new BusinessException('用户名或密码错误', ErrorCode.PASSWORD_ERROR);
+        this.logger.warn(`用户名或密码错误: ${username}`, 'validateUserByUsernamePassword');
+        throw new BusinessException('用户名或密码错误', ErrorCode.INVALID_CREDENTIALS);
     }
+
+    // 检查用户状态（如果需要）
+    if (user.status !== 'active') {
+        this.logger.warn(`用户状态异常: ${username}`, 'validateUserByUsernamePassword');
+        throw new BusinessException('用户状态异常', ErrorCode.USER_STATUS_ERROR);
+    }
+
     this.logger.log(`用户名密码登录成功: ${username}`, 'validateUserByUsernamePassword');
     return user;
   }
@@ -76,21 +100,19 @@ export class AuthService {
     return user;
   }
 
-  async validateUserByEmail(email: string, code: string): Promise<any> {
-    this.logger.debug(`开始验证邮箱验证码登录: ${email}`, 'validateUserByEmail');
+  async validateUserByEmail(email: string, code: string) {
+    // 验证邮箱验证码
     const isValid = await this.emailService.validateVerificationCode(email, code);
     if (!isValid) {
-      this.logger.warn(`邮箱验证码无效: ${email}`, 'validateUserByEmail');
-      throw new UnauthorizedException('邮箱或验证码无效');
+      throw new BusinessException('验证码无效或已过期', ErrorCode.INVALID_EMAIL_VERIFICATION_CODE);
     }
 
+    // 查找用户
     const user = await this.userService.findByEmail(email);
     if (!user) {
-      this.logger.warn(`用户不存在: ${email}`, 'validateUserByEmail');
-      throw new UnauthorizedException('用户不存在');
+      throw new BusinessException('用户不存在', ErrorCode.USER_NOT_FOUND);
     }
 
-    this.logger.log(`邮箱验证码登录成功: ${email}`, 'validateUserByEmail');
     return user;
   }
 
@@ -157,15 +179,14 @@ export class AuthService {
   async generateToken(user: any) {
     this.logger.debug(`开始生成用户令牌: ${user.id}`, 'generateToken');
     const payload = { 
-      sub: user.id, 
-      username: user.username 
+      sub: user.id,
+      username: user.username,
+      email: user.email,
+      phone: user.phone,
     };
     
     const token = {
-      accessToken: this.jwtService.sign(payload),
-      refreshToken: this.jwtService.sign(payload, { expiresIn: '7d' }),
-      tokenType: 'Bearer',
-      expiresIn: 3600
+      access_token: this.jwtService.sign(payload),
     };
 
     this.logger.log(`用户令牌生成成功: ${user.id}`, 'generateToken');

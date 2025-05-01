@@ -1,4 +1,4 @@
-import { IsString, IsOptional, IsNumber, IsEmail, IsPhoneNumber, Matches } from 'class-validator';
+import { IsString, IsOptional, IsNumber, IsEmail, IsPhoneNumber, Matches, MinLength } from 'class-validator';
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 
 export class CreateUserDto {
@@ -8,6 +8,7 @@ export class CreateUserDto {
 
   @ApiProperty({ description: '密码' })
   @IsString()
+  @MinLength(6)
   password: string;
 
   @ApiPropertyOptional({ description: '邮箱' })
@@ -31,18 +32,32 @@ export class PhoneLoginDto {
 
 export class PhoneRegisterDto {
   @ApiProperty({ description: '手机号' })
-  @Matches(/^1[3-9]\d{9}$/, { message: '手机号格式不正确' })
+  @IsPhoneNumber('CN')
   phone: string;
 
-  @ApiPropertyOptional({ description: '用户名' })
+  @ApiProperty({ description: '验证码' })
+  @IsString()
+  code: string;
+
+  @ApiProperty({ description: '用户名（可选）' })
   @IsString()
   @IsOptional()
   username?: string;
+}
 
-  @ApiPropertyOptional({ description: '密码' })
+export class EmailRegisterDto {
+  @ApiProperty({ description: '邮箱' })
+  @IsEmail()
+  email: string;
+
+  @ApiProperty({ description: '验证码' })
+  @IsString()
+  code: string;
+
+  @ApiProperty({ description: '用户名（可选）' })
   @IsString()
   @IsOptional()
-  password?: string;
+  username?: string;
 }
 
 export class SendCodeDto {
@@ -51,7 +66,7 @@ export class SendCodeDto {
 }
 
 export class UpdateUserDto {
-  @ApiPropertyOptional({ description: '用户名' })
+  @ApiPropertyOptional({ description: '用户名（可选）' })
   @IsString()
   @IsOptional()
   username?: string;
@@ -66,7 +81,7 @@ export class UpdateUserDto {
   @IsOptional()
   phone?: string;
 
-  @ApiPropertyOptional({ description: '头像' })
+  @ApiPropertyOptional({ description: '头像URL（可选）' })
   @IsString()
   @IsOptional()
   profilePicture?: string;
@@ -74,11 +89,12 @@ export class UpdateUserDto {
 
 export class ResetPasswordDto {
   @ApiProperty({ description: '手机号' })
-  @Matches(/^1[3-9]\d{9}$/, { message: '手机号格式不正确' })
+  @IsPhoneNumber('CN')
   phone: string;
 
   @ApiProperty({ description: '新密码' })
   @IsString()
+  @MinLength(6)
   password: string;
 }
 
@@ -108,5 +124,6 @@ export class SetPasswordDto {
 
   @ApiProperty({ description: '新密码' })
   @IsString()
+  @MinLength(6)
   password: string;
 }

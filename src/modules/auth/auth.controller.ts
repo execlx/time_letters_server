@@ -42,7 +42,7 @@ export class AuthController {
       if (error instanceof BusinessException) {
         throw error;
       }
-      throw new BusinessException('登录失败', ErrorCode.LOGIN_FAILED);
+      throw new BusinessException('登录失败', ErrorCode.INVALID_CREDENTIALS);
     }
   }
 
@@ -60,7 +60,7 @@ export class AuthController {
       if (error instanceof BusinessException) {
         throw error;
       }
-      throw new BusinessException('登录失败', ErrorCode.LOGIN_FAILED);
+      throw new BusinessException('登录失败', ErrorCode.INVALID_CREDENTIALS);
     }
   }
 
@@ -78,7 +78,7 @@ export class AuthController {
       if (error instanceof BusinessException) {
         throw error;
       }
-      throw new BusinessException('登录失败', ErrorCode.LOGIN_FAILED);
+      throw new BusinessException('登录失败', ErrorCode.INVALID_CREDENTIALS);
     }
   }
 
@@ -96,7 +96,7 @@ export class AuthController {
       if (error instanceof BusinessException) {
         throw error;
       }
-      throw new BusinessException('微信登录失败', ErrorCode.WECHAT_LOGIN_FAILED);
+      throw new BusinessException('微信登录失败', ErrorCode.WECHAT_ERROR);
     }
   }
 
@@ -114,7 +114,7 @@ export class AuthController {
       if (error instanceof BusinessException) {
         throw error;
       }
-      throw new BusinessException('邮箱登录失败', ErrorCode.EMAIL_LOGIN_FAILED);
+      throw new BusinessException('邮箱登录失败', ErrorCode.INVALID_CREDENTIALS);
     }
   }
 }
