@@ -5,7 +5,7 @@ import { UserService } from '../user/user.service';
 import { PhoneService } from './phone/phone.service';
 import { BusinessException } from '../../common/exceptions/business.exception';
 import { ErrorCode } from '../../common/constants/errorcode.constant';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { EmailService } from './email/email.service';
 import { LoggerService } from '../logger/logger.service';
 

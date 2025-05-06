@@ -2,7 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
-import * as bcrypt from 'bcrypt';
+import * as bcrypt from 'bcryptjs';
 import { BusinessException } from '../../common/exceptions/business.exception';
 import { ErrorCode } from '../../common/constants/errorcode.constant';
 import { LoggerService } from '../logger/logger.service';

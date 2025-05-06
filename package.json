@@ -32,7 +32,6 @@
     "@nestjs/typeorm": "^11.0.0",
     "@types/cache-manager": "^4.0.6",
     "@types/nodemailer": "^6.4.17",
-    "bcrypt": "^5.1.1",
     "bcryptjs": "^3.0.2",
     "cache-manager": "^6.4.2",
     "cache-manager-redis-store": "^3.0.1",
