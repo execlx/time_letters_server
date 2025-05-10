@@ -1,4 +1,5 @@
 {
+  "files": [],
   "compilerOptions": {
     "module": "commonjs",
     "declaration": true,
@@ -6,16 +7,18 @@
     "emitDecoratorMetadata": true,
     "experimentalDecorators": true,
     "allowSyntheticDefaultImports": true,
-    "target": "ES2023",
+    "target": "es2017",
     "sourceMap": true,
     "outDir": "./dist",
     "baseUrl": "./",
     "incremental": true,
-    "skipLibCheck": true,
-    "strictNullChecks": true,
-    "forceConsistentCasingInFileNames": true,
-    "noImplicitAny": false,
-    "strictBindCallApply": false,
-    "noFallthroughCasesInSwitch": false
-  }
-}
+    "skipLibCheck": true
+  },
+  "exclude": ["node_modules", "dist", "packages/*/dist"],
+  "references": [
+    { "path": "packages/shared" },
+    { "path": "packages/auth-service" },
+    { "path": "packages/time_letters" },
+    { "path": "packages/smart-pillbox" }
+  ]
+} 
